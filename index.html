@@ -4,8 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>趣味知识测试</title>
-    <style>
-        /* 保持原有样式不变，新增以下样式 */
+<style>
+        body {
+            font-family: 'Microsoft Yahei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        .question-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .rank-list {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+        #loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        #progress {
+            height: 5px;
+            background: #eee;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        #progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+	#result-page button {
+            margin: 5px;
+        }
+        .clear-button {
+            background: #ff4444 !important;
+        }
+        .clear-button:hover {
+            background: #cc0000 !important;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .question-box { padding: 15px; }
+            button { width: 100%; padding: 15px; }
+            h2 { font-size: 1.2rem; }
+            #timer { font-size: 0.9rem; }
+        }
+
         .admin-only { display: none; }
         #completed-page { text-align: center; }
         .error-msg { color: red; margin: 5px 0; }
