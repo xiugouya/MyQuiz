@@ -274,7 +274,7 @@
 
         function isOldId(id) {
             const timestamp = parseInt(id.substr(0, 8), 36);
-            return Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000;
+            return Date.now() - timestamp > 90 * 24 * 60 * 60 * 1000;
         }
 
         // 修改后的保存结果逻辑
