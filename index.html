@@ -62,6 +62,15 @@
             transition: width 0.3s ease;
             border-radius: 3px;
         }
+	#result-page button {
+            margin: 5px;
+        }
+        .clear-button {
+            background: #ff4444 !important;
+        }
+        .clear-button:hover {
+            background: #cc0000 !important;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -102,7 +111,14 @@
         <div class="rank-list">
             <h3>📜 历史排行榜</h3>
             <ol id="ranking-list"></ol>
-        </div>
+        <div id="credits">
+            <h3>🎉 特别鸣谢</h3>
+            <p>本测试由⌈修勾⌋制作，感谢以下支持：</p>
+            <ul>
+                <li>技术指导：渐冷</li>
+                <li>灵感来源：渐冷</li>
+                <li>特别感谢：渐冷</li>
+            </ul>
         <button onclick="location.reload()">再试一次</button>
     </div>
 
@@ -243,6 +259,76 @@
                 </li>
             `).join('');
         }
+        // 生成唯一用户ID（保留7天）
+        let userId = localStorage.getItem('userId');
+        if (!userId || isOldId(userId)) {
+            userId = generateUserId();
+            localStorage.setItem('userId', userId);
+        }
+
+        function generateUserId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        function isOldId(id) {
+            const timestamp = parseInt(id.substr(0, 8), 36);
+            return Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000;
+        }
+
+        // 修改后的保存结果逻辑
+        function saveResult(result) {
+            let history = JSON.parse(localStorage.getItem('quizHistory') || '{}');
+            
+            // 如果已有记录则比较成绩
+            if (history[userId]) {
+                const old = history[userId];
+                // 保留更好成绩（正确率优先，其次用时）
+                if (old.accuracy > result.accuracy || 
+                   (old.accuracy === result.accuracy && old.time <= result.time)) {
+                    return;
+                }
+            }
+            
+            history[userId] = result;
+            localStorage.setItem('quizHistory', JSON.stringify(history));
+        }
+
+        // 修改后的排行榜显示逻辑
+        function showRanking() {
+            const history = JSON.parse(localStorage.getItem('quizHistory') || '{}');
+            const historyArray = Object.values(history);
+            const sorted = historyArray.sort((a, b) => 
+                b.accuracy - a.accuracy || a.time - b.time);
+            
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = sorted.map((item, index) => `
+                <li>🏅 ${index + 1}. 正确率：${item.accuracy}% 
+                    (用时：${item.time}秒 - ${new Date(item.timestamp).toLocaleDateString()})
+                </li>
+            `).join('');
+        }
+
+        // 新增清除排行榜功能
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                localStorage.removeItem('quizHistory');
+                showRanking();
+            }
+        }
     </script>
+
+    <!-- 在结果页面添加清除按钮 -->
+    <div id="result-page" class="hidden question-box">
+        <!-- 保持原有结构不变 -->
+        <div class="rank-list">
+            <h3>📜 历史排行榜 
+                <button onclick="clearHistory()" class="clear-button" 
+                        style="font-size: 0.8rem; padding: 5px 10px;">
+                    清空记录
+                </button>
+            </h3>
+            <ol id="ranking-list"></ol>
+        </div>
+    </div>
 </body>
 </html>
