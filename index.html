@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>趣味知识测试</title>
-<style>
+    <title>关于我的趣味测试</title>
+    <style>
         body {
             font-family: 'Microsoft Yahei', sans-serif;
             max-width: 800px;
@@ -39,31 +39,12 @@
         .hidden {
             display: none;
         }
-        #loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #4CAF50;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none;
-        }
-        #progress {
-            height: 5px;
-            background: #eee;
-            margin: 15px 0;
-            border-radius: 3px;
-        }
-        #progress-bar {
-            height: 100%;
-            background: #4CAF50;
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 3px;
-        }
-	#result-page button {
-            margin: 5px;
+        #username-page input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         .clear-button {
             background: #ff4444 !important;
@@ -71,184 +52,239 @@
         .clear-button:hover {
             background: #cc0000 !important;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .question-box { padding: 15px; }
-            button { width: 100%; padding: 15px; }
-            h2 { font-size: 1.2rem; }
-            #timer { font-size: 0.9rem; }
-        }
-
-        .admin-only { display: none; }
-        #completed-page { text-align: center; }
-        .error-msg { color: red; margin: 5px 0; }
     </style>
 </head>
 <body>
-    <!-- 用户名输入页 -->
+    <!-- 用户名输入页面 -->
     <div id="username-page" class="question-box">
-        <h2>欢迎参加测试！</h2>
-        <input type="text" id="username" placeholder="输入唯一昵称（2-20字符）" maxlength="20">
-        <div id="username-error" class="error-msg"></div>
-        <button onclick="registerUser()">开始测试</button>
+        <h2>欢迎参加趣味测试！</h2>
+        <input type="text" id="username" placeholder="请输入您的昵称" maxlength="20">
+        <button onclick="saveUsername()">开始测试</button>
     </div>
 
-    <!-- 已完成的提示页 -->
-    <div id="completed-page" class="question-box hidden">
-        <h2>您已经完成过本次测试</h2>
-        <button onclick="showResultPage()">查看历史成绩</button>
-        <button onclick="resetTest()">重置测试</button>
+    <!-- 开始页面 -->
+    <div id="start-page" class="question-box hidden">
+        <h2>欢迎 <span id="display-username"></span>！</h2>
+        <button onclick="startTest()">开始答题</button>
     </div>
 
-    <!-- 结果页增加管理员按钮 -->
+    <!-- 测试页面 -->
+    <div id="test-page" class="hidden">
+        <div id="timer">⏱️ 用时：0秒</div>
+        <div id="questions-container"></div>
+    </div>
+
+    <!-- 结果页面 -->
     <div id="result-page" class="hidden question-box">
-        <div class="admin-only" id="admin-panel">
-            <button onclick="clearHistory()" class="clear-button">清空排行榜</button>
+        <h2>🏆 测试结果</h2>
+        <p>⏱️ 用时：<span id="final-time"></span></p>
+        <p>✅ 正确率：<span id="accuracy"></span></p>
+        <div class="rank-list">
+            <h3>📜 历史排行榜 
+                <button onclick="clearHistory()" class="clear-button">清空记录</button>
+            </h3>
+            <ol id="ranking-list"></ol>
         </div>
+        <button onclick="location.reload()">再试一次</button>
     </div>
+
+    <script>
+        // 配置参数
+        const DATA_EXPIRE_DAYS = 90; // 数据保存天数
+
+        // 用户系统初始化
+        let currentUser = {
+            id: localStorage.getItem('userId'),
+            name: localStorage.getItem('username'),
+            created: parseInt(localStorage.getItem('userCreated') || 0)
+        };
+
+        // 检查用户有效性
+        function validateUser() {
+            const now = Date.now();
+            if (!currentUser.id || 
+                !currentUser.name ||
+                (now - currentUser.created) > DATA_EXPIRE_DAYS * 86400000) {
+                
+                currentUser.id = generateUserId();
+                currentUser.created = Date.now();
+                
+                localStorage.setItem('userId', currentUser.id);
+                localStorage.setItem('userCreated', currentUser.created);
+                localStorage.removeItem('username');
+                
+                showUsernamePage();
+            } else {
+                showStartPage();
+            }
+        }
+
+        function generateUserId() {
+            return 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+        }
+
+        function showUsernamePage() {
+            document.getElementById('username-page').classList.remove('hidden');
+            document.getElementById('start-page').classList.add('hidden');
+        }
+
+        function saveUsername() {
+            const username = document.getElementById('username').value.trim();
+            if (username.length < 2 || username.length > 20) {
+                alert("昵称长度需为2-20个字符");
+                return;
+            }
+            
+            currentUser.name = username;
+            localStorage.setItem('username', username);
+            showStartPage();
+        }
+
+        function showStartPage() {
+            document.getElementById('username-page').classList.add('hidden');
+            document.getElementById('start-page').classList.remove('hidden');
+            document.getElementById('display-username').textContent = currentUser.name;
+        }
+
+        // 题目配置
+        const questions = [
+            {
+                question: "我的出生年份是？",
+                options: ["1995", "1998", "2000", "2002"],
+                answer: 1
+            },
+            {
+                question: "我最喜欢的编程语言是？",
+                options: ["Python", "JavaScript", "Java", "C++"],
+                answer: 0
+            },
+            {
+                question: "我的爱好不包括以下哪项？",
+                options: ["摄影", "烹饪", "跳伞", "阅读"],
+                answer: 2
+            }
+        ];
+
+        let currentQuestion = 0;
+        let correctCount = 0;
+        let startTime;
+        let timerInterval;
+
+        function startTest() {
+            document.getElementById('start-page').classList.add('hidden');
+            document.getElementById('test-page').classList.remove('hidden');
+            startTimer();
+            showQuestion();
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('timer').textContent = `⏱️ 用时：${elapsed}秒`;
+            }, 1000);
+        }
+
+        function showQuestion() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            
+            const q = questions[currentQuestion];
+            const questionHTML = `
+                <div class="question-box">
+                    <h3>📝 第 ${currentQuestion + 1} 题：${q.question}</h3>
+                    ${q.options.map((opt, index) => `
+                        <div style="margin: 10px 0;">
+                            <input type="radio" name="answer" id="opt${index}" 
+                                   value="${index}" onclick="nextQuestion(${index})">
+                            <label for="opt${index}" style="cursor: pointer;">${opt}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.innerHTML = questionHTML;
+        }
+
+        function nextQuestion(selectedIndex) {
+            if (selectedIndex === questions[currentQuestion].answer) {
+                correctCount++;
+            }
+            
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                endTest();
+            }
+        }
+
+        function endTest() {
+            clearInterval(timerInterval);
+            const timeUsed = Math.floor((Date.now() - startTime) / 1000);
+            const accuracy = Math.round((correctCount / questions.length) * 100);
+            
+            // 保存结果
+            const result = {
+                userId: currentUser.id,
+                username: currentUser.name,
+                time: timeUsed,
+                accuracy: accuracy,
+                timestamp: Date.now()
+            };
+            saveResult(result);
+
+            // 显示结果
+            document.getElementById('test-page').classList.add('hidden');
+            document.getElementById('result-page').classList.remove('hidden');
+            document.getElementById('final-time').textContent = `${timeUsed}秒`;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+            showRanking();
+        }
+
+        function saveResult(result) {
+            let history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+            
+            // 移除该用户旧记录
+            history = history.filter(item => 
+                item.userId !== currentUser.id ||
+                (item.accuracy < result.accuracy) ||
+                (item.accuracy === result.accuracy && item.time > result.time)
+            );
+            
+            history.push(result);
+            localStorage.setItem('quizHistory', JSON.stringify(history));
+        }
+
+        function showRanking() {
+            let history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+            
+            // 过滤过期数据
+            const validTime = Date.now() - DATA_EXPIRE_DAYS * 86400000;
+            history = history.filter(item => item.timestamp > validTime);
+            
+            // 排序逻辑
+            const sorted = history.sort((a, b) => 
+                b.accuracy - a.accuracy || a.time - b.time);
+            
+            // 显示排行榜
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = sorted.map((item, index) => `
+                <li>🏅 ${index + 1}. ${item.username} 
+                    - 正确率：${item.accuracy}% 
+                    (用时：${item.time}秒)
+                </li>
+            `).slice(0, 20).join(''); // 只显示前20名
+        }
+
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                localStorage.removeItem('quizHistory');
+                showRanking();
+            }
+        }
+
+        // 初始化
+        validateUser();
+    </script>
 </body>
-<script>
-// 配置参数
-const ADMIN_USERS = ["修勾", "渐冷"];
-const DATA_EXPIRE_DAYS = 90;
-
-// 用户系统初始化
-function initUserSystem() {
-    // 初始化用户列表
-    if(!localStorage.getItem('userList')) {
-        localStorage.setItem('userList', JSON.stringify({}));
-    }
-}
-
-// 用户名注册逻辑
-function registerUser() {
-    const username = document.getElementById('username').value.trim();
-    const errorEl = document.getElementById('username-error');
-    
-    // 验证规则
-    if(username.length < 2 || username.length > 20) {
-        errorEl.textContent = "昵称长度需为2-20个字符";
-        return;
-    }
-    if(/[^a-zA-Z0-9\u4e00-\u9fa5]/.test(username)) {
-        errorEl.textContent = "只能包含中文、英文和数字";
-        return;
-    }
-    
-    // 检查用户名唯一性
-    const userList = JSON.parse(localStorage.getItem('userList'));
-    if(userList[username]) {
-        errorEl.textContent = "该昵称已被使用，请换一个";
-        return;
-    }
-    
-    // 创建新用户
-    const userId = generateUserId();
-    userList[username] = {
-        id: userId,
-        created: Date.now(),
-        completed: false
-    };
-    
-    localStorage.setItem('userList', JSON.stringify(userList));
-    localStorage.setItem('currentUser', JSON.stringify({
-        name: username,
-        id: userId
-    }));
-    
-    checkTestStatus();
-}
-
-// 检查测试状态
-function checkTestStatus() {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    const userList = JSON.parse(localStorage.getItem('userList'));
-    
-    if(userList[user.name]?.completed) {
-        showCompletedPage();
-    } else {
-        showStartPage();
-    }
-}
-
-// 保存测试结果逻辑（修改后）
-function saveResult(result) {
-    let history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    
-    // 移除该用户所有旧记录
-    history = history.filter(item => item.userId !== user.id);
-    
-    // 添加新记录
-    history.push({
-        userId: user.id,
-        username: user.name,
-        ...result
-    });
-    
-    // 标记用户已完成
-    const userList = JSON.parse(localStorage.getItem('userList'));
-    userList[user.name].completed = true;
-    localStorage.setItem('userList', JSON.stringify(userList));
-    localStorage.setItem('quizHistory', JSON.stringify(history));
-}
-
-// 显示结果页时检查管理员权限
-function showResultPage() {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    document.getElementById('admin-panel').style.display = 
-        ADMIN_USERS.includes(user.name) ? 'block' : 'none';
-}
-
-// 清空排行榜逻辑
-function clearHistory() {
-    if(confirm('确定要清空所有记录吗？')) {
-        localStorage.removeItem('quizHistory');
-        showRanking();
-    }
-}
-
-// 排行榜显示逻辑（修复重复）
-function showRanking() {
-    let history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
-    
-    // 过滤过期数据和重复数据
-    const validTime = Date.now() - DATA_EXPIRE_DAYS * 86400000;
-    const seenUsers = new Set();
-    
-    history = history
-        .filter(item => item.timestamp > validTime)
-        .filter(item => {
-            if(seenUsers.has(item.userId)) return false;
-            seenUsers.add(item.userId);
-            return true;
-        })
-        .sort((a, b) => b.accuracy - a.accuracy || a.time - b.time);
-    
-    // 显示逻辑...
-}
-
-// 其他辅助函数
-function generateUserId() {
-    return 'usr_'+Date.now().toString(36)+Math.random().toString(36).substr(2,8);
-}
-
-function resetTest() {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    const userList = JSON.parse(localStorage.getItem('userList'));
-    delete userList[user.name];
-    localStorage.setItem('userList', JSON.stringify(userList));
-    localStorage.removeItem('currentUser');
-    location.reload();
-}
-
-// 初始化
-initUserSystem();
-const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-if(currentUser) checkTestStatus();
-</script>
 </html>
