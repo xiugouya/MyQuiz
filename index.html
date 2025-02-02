@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>个人知识挑战</title>
+    <title>知识挑战 - 共享排行榜版</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary-color: #2196F3;
@@ -27,15 +29,7 @@
             animation: fadeIn 0.3s ease;
         }
 
-        .active {
-            display: block;
-        }
-
-        h2 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 0.5rem;
-        }
+        .active { display: block; }
 
         input[type="text"] {
             padding: 0.8rem;
@@ -43,12 +37,6 @@
             border-radius: 4px;
             width: 250px;
             font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
-            outline: none;
         }
 
         button {
@@ -59,19 +47,6 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.3s;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background: #1976D2;
-        }
-
-        .card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 1rem 0;
         }
 
         table {
@@ -82,37 +57,11 @@
 
         th, td {
             padding: 12px;
-            text-align: left;
             border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        tr:hover {
-            background: #f5f5f5;
         }
 
         .correct { color: var(--success-color); }
         .wrong { color: var(--error-color); }
-
-        #usernameError {
-            margin-top: 0.5rem;
-            color: var(--error-color);
-            font-weight: bold;
-        }
-
-        .ranking-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .ranking-link:hover {
-            text-decoration: underline;
-        }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -124,14 +73,13 @@
     <!-- 注册页面 -->
     <div id="registerPage" class="page active">
         <h2>📝 用户注册</h2>
-        <div class="card">
-            <p>请输入用户名开始挑战：</p>
-            <input type="text" id="username" placeholder="输入用户名...">
+        <div>
+            <input type="text" id="username" placeholder="输入用户名">
             <button onclick="checkUsername()">开始挑战</button>
-            <p id="usernameError"></p>
+            <p id="usernameError" style="color:var(--error-color)"></p>
         </div>
-        <div class="card">
-            <h3>🏆 当前排行榜</h3>
+        <div>
+            <h3>🏆 实时排行榜</h3>
             <div id="previewRanking"></div>
         </div>
     </div>
@@ -139,86 +87,71 @@
     <!-- 答题页面 -->
     <div id="quizPage" class="page">
         <h2>🧠 知识挑战 (<span id="currentUser"></span>)</h2>
-        <div class="card">
-            <form id="quizForm" onsubmit="return submitQuiz(event)"></form>
-            <p>⏳ 已用时：<span id="timer">0</span>秒</p>
-        </div>
+        <form id="quizForm"></form>
+        <p>⏳ 已用时：<span id="timer">0</span>秒</p>
     </div>
 
     <!-- 结果页面 -->
     <div id="resultPage" class="page">
         <h2>🎯 挑战结果</h2>
-        <div class="card">
-            <div id="personalResult"></div>
-            <h3>🏅 排行榜</h3>
-            <div id="ranking"></div>
-            <button onclick="showPage('registerPage')">返回首页</button>
-        </div>
+        <div id="personalResult"></div>
+        <h3>🏅 全球排行榜</h3>
+        <div id="ranking"></div>
+        <button onclick="showPage('registerPage')">返回首页</button>
     </div>
 
 <script>
-// 题目配置
+// 替换为你的Firebase配置！！！
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAVnHnfEyFGj65afGLH3ghrP3Jar4uzcLQ",
+  authDomain: "myquiz-c29b5.firebaseapp.com",
+  projectId: "myquiz-c29b5",
+  storageBucket: "myquiz-c29b5.firebasestorage.app",
+  messagingSenderId: "895675606677",
+  appId: "1:895675606677:web:8cd8ae3897fc3415dd9d9c",
+  measurementId: "G-GHRZQP0R1J"
+};
+
+// 初始化Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 题目设置
 const questions = [
     {
-                question: "我的身高大约是？",
-                options: ["160以下", "160-165", "166-170", "171-180"],
-                answer: 3
-            },
-            {
-                question: "我常玩的游戏不包括以下哪项？",
-                options: ["和平精英", "王者荣耀", "金铲铲", "明日之后"],
-                answer: 2
-            },
-            {
-                question: "我的爱好不包括以下哪项？",
-                options: ["吉他", "游泳", "台球", "打游戏"],
-                answer: 1
-            }
+        question: "我最喜欢的颜色？",
+        options: ["红色", "蓝色", "绿色", "黑色"],
+        answer: 1
+    },
+    {
+        question: "我的出生年份？",
+        options: ["1990", "1995", "2000", "2005"],
+        answer: 2
+    }
 ];
 
-let startTime;
-let timerInterval;
-let currentUser = "";
-
-// 初始化预览排行榜
-function initPreviewRanking() {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const sortedUsers = [...users].sort((a,b) => b.accuracy - a.accuracy).slice(0, 5);
-    
-    document.getElementById("previewRanking").innerHTML = sortedUsers.length > 0 ? `
-        <table>
-            <tr><th>排名</th><th>用户名</th><th>正确率</th></tr>
-            ${sortedUsers.map((u,i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td>${u.username}</td>
-                    <td>${u.accuracy}%</td>
-                </tr>
-            `).join("")}
-        </table>
-    ` : "<p>暂无挑战记录，快来成为第一个挑战者吧！</p>";
-}
+let startTime, timerInterval, currentUser;
 
 // 初始化题目
 function initQuiz() {
     const form = document.getElementById("quizForm");
     form.innerHTML = questions.map((q, i) => `
-        <div style="margin: 1.5rem 0;">
-            <p style="font-weight: 500;">${i+1}. ${q.question}</p>
-            <div style="display: grid; gap: 0.8rem;">
-                ${q.options.map((o, j) => `
-                    <label style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="radio" name="q${i}" value="${j}" required>
-                        ${o}
-                    </label>
-                `).join("")}
-            </div>
+        <div>
+            <p>${i+1}. ${q.question}</p>
+            ${q.options.map((o, j) => `
+                <label>
+                    <input type="radio" name="q${i}" value="${j}" required>
+                    ${o}
+                </label>
+            `).join("")}
         </div>
     `).join("") + '<button type="submit">提交答案</button>';
+    form.onsubmit = submitQuiz;
 }
 
 // 用户名检查
-function checkUsername() {
+async function checkUsername() {
     const username = document.getElementById("username").value.trim();
     const errorEl = document.getElementById("usernameError");
     
@@ -227,34 +160,40 @@ function checkUsername() {
         return;
     }
 
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const existingUser = users.find(u => u.username === username);
+    try {
+        const doc = await db.collection("users").doc(username).get();
+        if (doc.exists) {
+            showResult(doc.data());
+            showPage("resultPage");
+            errorEl.textContent = "⚠️ 用户名已存在，显示历史记录";
+            return;
+        }
 
-    if (existingUser) {
-        showResult(existingUser);
-        showPage("resultPage");
-        errorEl.textContent = "⚠️ 该用户名已存在，已为您显示历史成绩";
-        return;
+        currentUser = username;
+        document.getElementById("currentUser").textContent = username;
+        showPage("quizPage");
+        startTimer();
+        initQuiz();
+    } catch (error) {
+        alert("网络错误，请重试");
     }
+}
 
-    errorEl.textContent = "";
-    currentUser = username;
-    document.getElementById("currentUser").textContent = username;
-    showPage("quizPage");
+// 开始计时
+function startTimer() {
     startTime = Date.now();
     timerInterval = setInterval(() => {
         document.getElementById("timer").textContent = 
             Math.floor((Date.now() - startTime)/1000);
     }, 1000);
-    initQuiz();
 }
+
 // 提交答案
-function submitQuiz(e) {
+async function submitQuiz(e) {
     e.preventDefault();
     clearInterval(timerInterval);
     const timeUsed = Math.floor((Date.now() - startTime)/1000);
-    
-    // 计算得分
+
     const formData = new FormData(e.target);
     const answers = questions.map((q, i) => ({
         question: q.question,
@@ -265,102 +204,48 @@ function submitQuiz(e) {
     const correctCount = answers.filter(a => a.selected === a.correct).length;
     const accuracy = (correctCount / questions.length * 100).toFixed(1);
 
-    // 保存记录
-    const userData = {
-        username: currentUser,
-        time: timeUsed,
-        accuracy: accuracy,
-        answers: answers,
-        timestamp: new Date().toISOString()
-    };
-
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    users.push(userData);
-    localStorage.setItem("users", JSON.stringify(users));
-
-    showResult(userData);
-    showPage("resultPage");
-    return false;
+    try {
+        await db.collection("users").doc(currentUser).set({
+            username: currentUser,
+            time: timeUsed,
+            accuracy: parseFloat(accuracy),
+            answers: answers,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showResult(currentUser);
+        showPage("resultPage");
+    } catch (error) {
+        alert("提交失败，请检查网络");
+    }
 }
 
 // 显示结果
-function showResult(userData) {
-    const personalResult = document.getElementById("personalResult");
-    personalResult.innerHTML = `
-        <h4>${userData.username} 的答题结果 (正确率：${userData.accuracy}%)</h4>
-        <h3>🎉 特别鸣谢</h3>
-            <p>本测试由⌈修勾⌋制作，感谢以下支持：</p>
-            <ul>
-                <li>技术指导：渐冷</li>
-                <li>灵感来源：渐冷</li>
-                <li>特别感谢：渐冷</li>
-            </ul>
-        <table>
-            <tr><th>题目</th><th>你的答案</th><th>正确答案</th></tr>
-            ${userData.answers.map((a, i) => `
-                <tr>
-                    <td>${i+1}. ${a.question}</td>
-                    <td class="${a.selected === a.correct ? 'correct' : 'wrong'}">
-                        ${questions[i].options[a.selected]}
-                    </td>
-                    <td>${questions[i].options[a.correct]}</td>
-                </tr>
-            `).join("")}
-        </table>
-    `;
+async function showResult(username) {
+    try {
+        const doc = await db.collection("users").doc(username).get();
+        const user = doc.data();
+        
+        // 个人结果
+        document.getElementById("personalResult").innerHTML = `
+            <h4>${user.username} 的成绩</h4>
+            <p>正确率：${user.accuracy}% | 用时：${user.time}秒</p>
+            <table>
+                ${user.answers.map((a, i) => `
+                    <tr>
+                        <td>${i+1}. ${a.question}</td>
+                        <td class="${a.selected === a.correct ? 'correct' : 'wrong'}">
+                            ${questions[i].options[a.selected]}
+                        </td>
+                        <td>正确答案：${questions[i].options[a.correct]}</td>
+                    </tr>
+                `).join("")}
+            </table>
+        `;
 
-    // 生成排行榜
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const sortedUsers = [...users].sort((a,b) => b.accuracy - a.accuracy);
-    
-    document.getElementById("ranking").innerHTML = `
-        <table>
-            <tr><th>排名</th><th>用户名</th><th>正确率</th><th>用时</th></tr>
-            ${sortedUsers.map((u,i) => `
-                <tr>
-                    <td>${i+1}</td>
-                    <td><a href="javascript:showUserDetail('${u.username}')">${u.username}</a></td>
-                    <td>${u.accuracy}%</td>
-                    <td>${u.time}秒</td>
-                </tr>
-            `).join("")}
-        </table>
-    `;
-}
-
-// 查看用户详情
-function showUserDetail(username) {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const user = users.find(u => u.username === username);
-    
-    let detailMessage = `用户 ${username} 的答题详情\n`;
-    detailMessage += `├─ 用时：${user.time}秒\n`;
-    detailMessage += `├─ 正确率：${user.accuracy}%\n`;
-    detailMessage += `└─ 答题时间：${new Date(user.timestamp).toLocaleString()}\n\n`;
-
-    user.answers.forEach((answer, index) => {
-        const question = questions.find(q => q.question === answer.question);
-        if (question) {
-            detailMessage += `题目 ${index+1}：${answer.question}\n`;
-            detailMessage += `├─ 你的选择：${question.options[answer.selected]} ${answer.selected === answer.correct ? '✅' : '❌'}\n`;
-            detailMessage += `└─ 正确答案：${question.options[answer.correct]}\n\n`;
-        }
-    });
-
-    alert(detailMessage);
-}
-
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
-}
-
-// 初始化页面时清空可能存在的用户输入
-    window.onload = function() {
-    initQuiz();
-    initPreviewRanking();
-};
-</script>
-</script>
-</body>
-</html>
+        // 全球排行榜
+        const snapshot = await db.collection("users")
+            .orderBy("accuracy", "desc")
+            .limit(10)
+            .get();
+        
+        document.getElementById("ranking"
