@@ -332,10 +332,22 @@ function showResult(userData) {
 function showUserDetail(username) {
     const users = JSON.parse(localStorage.getItem("users") || "[]");
     const user = users.find(u => u.username === username);
-    alert(`用户 ${username} 的答题记录：
-时间：${user.time}秒
-正确率：${user.accuracy}%
-答题时间：${new Date(user.timestamp).toLocaleString()}`);
+    
+    let detailMessage = `用户 ${username} 的答题详情\n`;
+    detailMessage += `├─ 用时：${user.time}秒\n`;
+    detailMessage += `├─ 正确率：${user.accuracy}%\n`;
+    detailMessage += `└─ 答题时间：${new Date(user.timestamp).toLocaleString()}\n\n`;
+
+    user.answers.forEach((answer, index) => {
+        const question = questions.find(q => q.question === answer.question);
+        if (question) {
+            detailMessage += `题目 ${index+1}：${answer.question}\n`;
+            detailMessage += `├─ 你的选择：${question.options[answer.selected]} ${answer.selected === answer.correct ? '✅' : '❌'}\n`;
+            detailMessage += `└─ 正确答案：${question.options[answer.correct]}\n\n`;
+        }
+    });
+
+    alert(detailMessage);
 }
 
 function showPage(pageId) {
