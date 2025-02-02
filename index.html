@@ -1,78 +1,213 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>个人问答挑战</title>
+    <title>个人知识挑战</title>
     <style>
-        .page { display: none; padding: 20px; }
-        .active { display: block; }
-        table { border-collapse: collapse; margin: 20px 0; }
-        td, th { border: 1px solid #ddd; padding: 8px; }
-        .correct { color: green; }
-        .wrong { color: red; }
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #607D8B;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .page {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .active {
+            display: block;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        input[type="text"] {
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 250px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 1rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .correct { color: var(--success-color); }
+        .wrong { color: var(--error-color); }
+
+        #usernameError {
+            margin-top: 0.5rem;
+            color: var(--error-color);
+            font-weight: bold;
+        }
+
+        .ranking-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ranking-link:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <!-- 注册页面 -->
     <div id="registerPage" class="page active">
-        <h2>欢迎参加知识挑战!</h2>
-        <p>用户名：<input type="text" id="username">
-        <button onclick="checkUsername()">开始挑战</button></p>
-        <p id="usernameError" style="color:red"></p>
+        <h2>📝 用户注册</h2>
+        <div class="card">
+            <p>请输入用户名开始挑战：</p>
+            <input type="text" id="username" placeholder="输入用户名...">
+            <button onclick="checkUsername()">开始挑战</button>
+            <p id="usernameError"></p>
+        </div>
+        <div class="card">
+            <h3>🏆 当前排行榜</h3>
+            <div id="previewRanking"></div>
+        </div>
     </div>
 
     <!-- 答题页面 -->
     <div id="quizPage" class="page">
-        <h2>知识挑战 (<span id="currentUser"></span>)</h2>
-        <form id="quizForm" onsubmit="return submitQuiz(event)"></form>
-        <p>已用时：<span id="timer">0</span>秒</p>
+        <h2>🧠 知识挑战 (<span id="currentUser"></span>)</h2>
+        <div class="card">
+            <form id="quizForm" onsubmit="return submitQuiz(event)"></form>
+            <p>⏳ 已用时：<span id="timer">0</span>秒</p>
+        </div>
     </div>
 
     <!-- 结果页面 -->
     <div id="resultPage" class="page">
-        <h2>挑战结果</h2>
-        <div id="personalResult"></div>
-        <h3>排行榜</h3>
-        <div id="ranking"></div>
-        <button onclick="showPage('registerPage')">返回首页</button>
+        <h2>🎯 挑战结果</h2>
+        <div class="card">
+            <div id="personalResult"></div>
+            <h3>🏅 排行榜</h3>
+            <div id="ranking"></div>
+            <button onclick="showPage('registerPage')">返回首页</button>
+        </div>
     </div>
 
 <script>
 // 题目配置
 const questions = [
-            {
-                question: "我的身高大约是？",
-                options: ["160以下", "160-165", "166-170", "171-180"],
-                answer: 3
-            },
-            {
-                question: "我常玩的游戏不包括以下哪项？",
-                options: ["和平精英", "王者荣耀", "金铲铲", "明日之后"],
-                answer: 2
-            },
-            {
-                question: "我的爱好不包括以下哪项？",
-                options: ["吉他", "游泳", "台球", "打游戏"],
-                answer: 1
-            }
-
+    {
+        question: "我最喜欢的颜色？",
+        options: ["红色", "蓝色", "绿色", "黑色"],
+        answer: 1
+    },
+    {
+        question: "我的出生年份？",
+        options: ["1990", "1995", "2000", "2005"],
+        answer: 2
+    }
 ];
 
 let startTime;
 let timerInterval;
 let currentUser = "";
 
+// 初始化预览排行榜
+function initPreviewRanking() {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const sortedUsers = [...users].sort((a,b) => b.accuracy - a.accuracy).slice(0, 5);
+    
+    document.getElementById("previewRanking").innerHTML = sortedUsers.length > 0 ? `
+        <table>
+            <tr><th>排名</th><th>用户名</th><th>正确率</th></tr>
+            ${sortedUsers.map((u,i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${u.username}</td>
+                    <td>${u.accuracy}%</td>
+                </tr>
+            `).join("")}
+        </table>
+    ` : "<p>暂无挑战记录，快来成为第一个挑战者吧！</p>";
+}
+
 // 初始化题目
 function initQuiz() {
     const form = document.getElementById("quizForm");
     form.innerHTML = questions.map((q, i) => `
-        <div>
-            <p>${i+1}. ${q.question}</p>
-            ${q.options.map((o, j) => `
-                <label>
-                    <input type="radio" name="q${i}" value="${j}" required>
-                    ${o}
-                </label>
-            `).join("")}
+        <div style="margin: 1.5rem 0;">
+            <p style="font-weight: 500;">${i+1}. ${q.question}</p>
+            <div style="display: grid; gap: 0.8rem;">
+                ${q.options.map((o, j) => `
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="radio" name="q${i}" value="${j}" required>
+                        ${o}
+                    </label>
+                `).join("")}
+            </div>
         </div>
     `).join("") + '<button type="submit">提交答案</button>';
 }
@@ -83,13 +218,17 @@ function checkUsername() {
     const errorEl = document.getElementById("usernameError");
     
     if (!username) {
-        errorEl.textContent = "用户名不能为空";
+        errorEl.textContent = "⚠️ 用户名不能为空";
         return;
     }
 
     const users = JSON.parse(localStorage.getItem("users") || "[]");
-    if (users.some(u => u.username === username)) {
-        errorEl.textContent = "用户名已存在";
+    const existingUser = users.find(u => u.username === username);
+
+    if (existingUser) {
+        showResult(existingUser);
+        showPage("resultPage");
+        errorEl.textContent = "⚠️ 该用户名已存在，已为您显示历史成绩";
         return;
     }
 
@@ -104,7 +243,6 @@ function checkUsername() {
     }, 1000);
     initQuiz();
 }
-
 // 提交答案
 function submitQuiz(e) {
     e.preventDefault();
@@ -195,7 +333,11 @@ function showPage(pageId) {
 }
 
 // 初始化页面时清空可能存在的用户输入
-window.onload = initQuiz;
+    window.onload = function() {
+    initQuiz();
+    initPreviewRanking();
+};
+</script>
 </script>
 </body>
 </html>
