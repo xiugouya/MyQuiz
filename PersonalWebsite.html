@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于我的趣味测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft Yahei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        .question-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .rank-list {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+        #loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        #progress {
+            height: 5px;
+            background: #eee;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        #progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .question-box { padding: 15px; }
+            button { width: 100%; padding: 15px; }
+            h2 { font-size: 1.2rem; }
+            #timer { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div id="loader"></div>
+
+    <!-- 开始页面 -->
+    <div id="start-page" class="question-box">
+        <h2>🎉 欢迎参加关于我的趣味测试！</h2>
+        <button onclick="startTest()">开始挑战</button>
+    </div>
+
+    <!-- 测试页面 -->
+    <div id="test-page" class="hidden">
+        <div id="timer">⏱️ 用时：0秒</div>
+        <div id="progress">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="questions-container"></div>
+    </div>
+
+    <!-- 结果页面 -->
+    <div id="result-page" class="hidden question-box">
+        <h2>🏆 测试结果</h2>
+        <p>⏱️ 用时：<span id="final-time"></span></p>
+        <p>✅ 正确率：<span id="accuracy"></span></p>
+        <div class="rank-list">
+            <h3>📜 历史排行榜</h3>
+            <ol id="ranking-list"></ol>
+        </div>
+        <button onclick="location.reload()">再试一次</button>
+    </div>
+
+    <script>
+        // 题目配置
+        const questions = [
+            {
+                question: "我的身高大约是？",
+                options: ["160以下", "160-165", "166-170", "171-180"],
+                answer: 3
+            },
+            {
+                question: "我常玩的游戏不包括以下哪项？",
+                options: ["和平精英", "王者荣耀", "金铲铲", "明日之后"],
+                answer: 2
+            },
+            {
+                question: "我的爱好不包括以下哪项？",
+                options: ["吉他", "游泳", "台球", "打游戏"],
+                answer: 1
+            }
+        ];
+
+        let currentQuestion = 0;
+        let correctCount = 0;
+        let startTime;
+        let timerInterval;
+
+        function startTest() {
+            document.getElementById('start-page').classList.add('hidden');
+            showLoader();
+            
+            // 模拟加载过程
+            setTimeout(() => {
+                hideLoader();
+                document.getElementById('test-page').classList.remove('hidden');
+                startTimer();
+                showQuestion();
+            }, 800);
+        }
+
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('timer').textContent = `⏱️ 用时：${elapsed}秒`;
+            }, 1000);
+        }
+
+        function showQuestion() {
+            updateProgress();
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            
+            const q = questions[currentQuestion];
+            const questionHTML = `
+                <div class="question-box">
+                    <h3>📝 第 ${currentQuestion + 1} 题：${q.question}</h3>
+                    ${q.options.map((opt, index) => `
+                        <div style="margin: 10px 0;">
+                            <input type="radio" name="answer" id="opt${index}" 
+                                   value="${index}" onclick="nextQuestion(${index})">
+                            <label for="opt${index}" style="cursor: pointer;">${opt}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.innerHTML = questionHTML;
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestion / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+        }
+
+        function nextQuestion(selectedIndex) {
+            if (selectedIndex === questions[currentQuestion].answer) {
+                correctCount++;
+            }
+            
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                endTest();
+            }
+        }
+
+        function endTest() {
+            clearInterval(timerInterval);
+            showLoader();
+            
+            setTimeout(() => {
+                hideLoader();
+                const timeUsed = Math.floor((Date.now() - startTime) / 1000);
+                const accuracy = Math.round((correctCount / questions.length) * 100);
+                
+                // 保存结果
+                const result = {
+                    time: timeUsed,
+                    accuracy: accuracy,
+                    timestamp: new Date().toISOString()
+                };
+                saveResult(result);
+
+                // 显示结果
+                document.getElementById('test-page').classList.add('hidden');
+                document.getElementById('result-page').classList.remove('hidden');
+                document.getElementById('final-time').textContent = `${timeUsed}秒`;
+                document.getElementById('accuracy').textContent = `${accuracy}%`;
+                showRanking();
+            }, 500);
+        }
+
+        function saveResult(result) {
+            let history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+            history.push(result);
+            localStorage.setItem('quizHistory', JSON.stringify(history));
+        }
+
+        function showRanking() {
+            const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+            const sorted = history.sort((a, b) => 
+                b.accuracy - a.accuracy || a.time - b.time);
+            
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = sorted.map((item, index) => `
+                <li>🏅 ${index + 1}. 正确率：${item.accuracy}% 
+                    (用时：${item.time}秒 - ${new Date(item.timestamp).toLocaleDateString()})
+                </li>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
