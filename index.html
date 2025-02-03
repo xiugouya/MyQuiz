@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>默契挑战</title>
-    <!-- 添加Firebase SDK -->
+    <title>知识挑战 - 共享排行榜版</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore-compat.js"></script>
     <style>
@@ -103,44 +102,31 @@
 
 <script>
 // 替换为你的Firebase配置！！！
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAVnHnfEyFGj65afGLH3ghrP3Jar4uzcLQ",
-  authDomain: "myquiz-c29b5.firebaseapp.com",
-  projectId: "myquiz-c29b5",
-  storageBucket: "myquiz-c29b5.firebasestorage.app",
-  messagingSenderId: "895675606677",
-  appId: "1:895675606677:web:8cd8ae3897fc3415dd9d9c",
-  measurementId: "G-GHRZQP0R1J"
+  apiKey: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ12345678",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef1234567890abcdef"
 };
 
 // 初始化Firebase
-let db;
-try {
-    const app = firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    console.log("Firebase 初始化成功");
-} catch (error) {
-    console.error("Firebase 初始化失败:", error);
-}
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 // 题目设置
 const questions = [
     {
-                question: "我的身高大约是？",
-                options: ["160以下", "160-165", "166-170", "171-180"],
-                answer: 2
-            },
-            {
-                question: "我常玩的游戏不包括以下哪项？",
-                options: ["和平精英", "王者荣耀", "金铲铲", "明日之后"],
-                answer: 2
-            },
-            {
-                question: "我的爱好不包括以下哪项？",
-                options: ["吉他", "游泳", "台球", "打游戏"],
-                answer: 1
-            }
+        question: "我最喜欢的颜色？",
+        options: ["红色", "蓝色", "绿色", "黑色"],
+        answer: 1
+    },
+    {
+        question: "我的出生年份？",
+        options: ["1990", "1995", "2000", "2005"],
+        answer: 2
+    }
 ];
 
 let startTime, timerInterval, currentUser;
@@ -162,7 +148,7 @@ function initQuiz() {
     form.onsubmit = submitQuiz;
 }
 
-// 修改后的checkUsername函数
+// 用户名检查
 async function checkUsername() {
     const username = document.getElementById("username").value.trim();
     const errorEl = document.getElementById("usernameError");
@@ -178,24 +164,18 @@ async function checkUsername() {
             showResult(doc.data());
             showPage("resultPage");
             errorEl.textContent = "⚠️ 用户名已存在，显示历史记录";
-        } else {
-            currentUser = username;
-            document.getElementById("currentUser").textContent = username;
-            showPage("quizPage");
-            startTimer();
-            initQuiz();
+            return;
         }
+
+        currentUser = username;
+        document.getElementById("currentUser").textContent = username;
+        showPage("quizPage");
+        startTimer();
+        initQuiz();
     } catch (error) {
         alert("网络错误，请重试");
     }
 }
-
-// 页面加载完成后绑定事件
-window.addEventListener('DOMContentLoaded', () => {
-    // 其他初始化代码
-    initQuiz();
-    initPreviewRanking();
-});
 
 // 开始计时
 function startTimer() {
@@ -236,30 +216,6 @@ async function submitQuiz(e) {
         alert("提交失败，请检查网络");
     }
 }
-// 添加缺失的初始化函数
-async function initPreviewRanking() {
-    try {
-        const snapshot = await db.collection("users")
-            .orderBy("accuracy", "desc")
-            .limit(5)
-            .get();
-        
-        const users = snapshot.docs.map(doc => doc.data());
-        document.getElementById("previewRanking").innerHTML = `
-            <table>
-                ${users.map((u,i) => `
-                    <tr>
-                        <td>${i+1}</td>
-                        <td>${u.username}</td>
-                        <td>${u.accuracy}%</td>
-                    </tr>
-                `).join("")}
-            </table>
-        `;
-    } catch (error) {
-        console.error("排行榜初始化失败:", error);
-    }
-}
 
 // 显示结果
 async function showResult(username) {
@@ -281,12 +237,54 @@ async function showResult(username) {
                         <td>正确答案：${questions[i].options[a.correct]}</td>
                     </tr>
                 `).join("")}
-            </table>`;
-</script>
+            </table>
+        `;
+
         // 全球排行榜
         const snapshot = await db.collection("users")
             .orderBy("accuracy", "desc")
             .limit(10)
             .get();
         
-        document.getElementById("ranking"
+        document.getElementById("ranking").innerHTML = `
+            <table>
+                <tr><th>排名</th><th>用户</th><th>正确率</th><th>用时</th></tr>
+                ${snapshot.docs.map((doc, i) => `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td><button onclick="showDetail('${doc.id}')">${doc.id}</button></td>
+                        <td>${doc.data().accuracy}%</td>
+                        <td>${doc.data().time}秒</td>
+                    </tr>
+                `).join("")}
+            </table>
+        `;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// 显示用户详情
+async function showDetail(username) {
+    try {
+        const doc = await db.collection("users").doc(username).get();
+        const user = doc.data();
+        alert(`用户 ${username} 的答题详情：
+正确率：${user.accuracy}%
+用时：${user.time}秒
+答题时间：${new Date(user.timestamp?.toDate()).toLocaleString()}`);
+    } catch (error) {
+        alert("获取详情失败");
+    }
+}
+
+// 页面切换
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+}
+
+window.onload = initQuiz;
+</script>
+</body>
+</html>
