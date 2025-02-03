@@ -256,25 +256,23 @@ async function submitQuiz(e) {
         alert("提交失败，请检查网络");
     }
 }
-
-// 显示结果
-async function showResult(username) {
+// 修改后的showResult函数
+async function showResult(userData) {
     try {
-        const doc = await db.collection("users").doc(username).get();
-        const user = doc.data();
-        
         // 个人结果
         document.getElementById("personalResult").innerHTML = `
-            <h4>${user.username} 的成绩</h4>
-            <p>正确率：${user.accuracy}% | 用时：${user.time}秒</p>
+            <h4>${userData.username} 的成绩</h4>
+            <p class="author-message">🎉 想说的话：感谢参与！你的每一个选择都是对我的了解~</p>
+            <p>📊 正确率：${userData.accuracy}% | ⏱️ 用时：${userData.time}秒</p>
             <table>
-                ${user.answers.map((a, i) => `
+                <tr><th>题目</th><th>你的答案</th><th>正确答案</th></tr>
+                ${userData.answers.map((a, i) => `
                     <tr>
                         <td>${i+1}. ${a.question}</td>
                         <td class="${a.selected === a.correct ? 'correct' : 'wrong'}">
                             ${questions[i].options[a.selected]}
                         </td>
-                        <td>正确答案：${questions[i].options[a.correct]}</td>
+                        <td>${questions[i].options[a.correct]}</td>
                     </tr>
                 `).join("")}
             </table>
@@ -292,7 +290,7 @@ async function showResult(username) {
                 ${snapshot.docs.map((doc, i) => `
                     <tr>
                         <td>${i+1}</td>
-                        <td><button onclick="showDetail('${doc.id}')">${doc.id}</button></td>
+                        <td><button class="user-detail-btn" onclick="showUserDetail('${doc.id}')">${doc.id}</button></td>
                         <td>${doc.data().accuracy}%</td>
                         <td>${doc.data().time}秒</td>
                     </tr>
@@ -304,20 +302,49 @@ async function showResult(username) {
     }
 }
 
-// 显示用户详情
-async function showDetail(username) {
+// 增强的showUserDetail函数
+async function showUserDetail(username) {
     try {
         const doc = await db.collection("users").doc(username).get();
         const user = doc.data();
-        alert(`用户 ${username} 的答题详情：
-正确率：${user.accuracy}%
-用时：${user.time}秒
-答题时间：${new Date(user.timestamp?.toDate()).toLocaleString()}`);
+        
+        let detailHTML = `
+            <div class="user-detail">
+                <h4>${username} 的答题详情</h4>
+                <p>⏱️ 用时：${user.time}秒 | ✅ 正确率：${user.accuracy}%</p>
+                <table>
+                    <tr><th>题目</th><th>选择</th><th>正确</th></tr>
+        `;
+
+        user.answers.forEach((answer, index) => {
+            const question = questions.find(q => q.question === answer.question);
+            detailHTML += `
+                <tr>
+                    <td>${index+1}. ${answer.question}</td>
+                    <td class="${answer.selected === answer.correct ? 'correct' : 'wrong'}">
+                        ${question.options[answer.selected]}
+                    </td>
+                    <td>${question.options[answer.correct]}</td>
+                </tr>
+            `;
+        });
+
+        detailHTML += `</table></div>`;
+        
+        // 创建弹窗显示
+        const popup = document.createElement('div');
+        popup.className = 'detail-popup';
+        popup.innerHTML = `
+            <div class="popup-content">
+                ${detailHTML}
+                <button onclick="this.parentElement.parentElement.remove()">关闭</button>
+            </div>
+        `;
+        document.body.appendChild(popup);
     } catch (error) {
-        alert("获取详情失败");
+        alert("获取详情失败：" + error.message);
     }
 }
-
 // 页面切换
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
