@@ -245,6 +245,30 @@ async function submitQuiz(e) {
         alert("提交失败，请检查网络");
     }
 }
+// 添加缺失的初始化函数
+async function initPreviewRanking() {
+    try {
+        const snapshot = await db.collection("users")
+            .orderBy("accuracy", "desc")
+            .limit(5)
+            .get();
+        
+        const users = snapshot.docs.map(doc => doc.data());
+        document.getElementById("previewRanking").innerHTML = `
+            <table>
+                ${users.map((u,i) => `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td>${u.username}</td>
+                        <td>${u.accuracy}%</td>
+                    </tr>
+                `).join("")}
+            </table>
+        `;
+    } catch (error) {
+        console.error("排行榜初始化失败:", error);
+    }
+}
 
 // 显示结果
 async function showResult(username) {
@@ -266,8 +290,7 @@ async function showResult(username) {
                         <td>正确答案：${questions[i].options[a.correct]}</td>
                     </tr>
                 `).join("")}
-            </table>
-        `;
+            </table>`;
 
         // 全球排行榜
         const snapshot = await db.collection("users")
