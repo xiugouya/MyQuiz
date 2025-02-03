@@ -355,6 +355,55 @@ function showPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
+<!-- 引入阿里云SDK -->
+<script src="https://gosspublic.alicdn.com/aliyun-tablestore-sdk/5.3.2/aliyun-tablestore-sdk.js"></script>
+
+// 初始化客户端
+const client = new TableStore.Client({
+  accessKeyId: 'LTAI5tB8wH6nqeTd7WkN4tE6',
+  secretAccessKey: 'MMpxT69Nvpkbx6yWahmb26X1gPPvFo',
+  endpoint: 'https://r01pcsfw3p4q.cn-shanghai.ots.aliyuncs.com',
+  instancename: 'r01pcsfw3p4q'
+});
+
+// 保存用户数据示例
+async function saveUserData(username, data) {
+  const params = {
+    tableName: "users",
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.EXPECT_NOT_EXIST, null),
+    primaryKey: [{ username }],
+    attributeColumns: [
+      { accuracy: data.accuracy },
+      { timestamp: Date.now() },
+      { answers: JSON.stringify(data.answers) }
+    ]
+  };
+  
+  try {
+    await client.putRow(params);
+    console.log("数据保存成功");
+  } catch (error) {
+    console.error("保存失败:", error);
+  }
+}
+
+// 查询用户数据示例
+async function getUserData(username) {
+  const params = {
+    tableName: "users",
+    primaryKey: [{ username }],
+    maxVersions: 1
+  };
+
+  try {
+    const data = await client.getRow(params);
+    return data.attributeColumns;
+  } catch (error) {
+    console.error("查询失败:", error);
+    return null;
+  }
+}
+
 window.onload = initQuiz;
 </script>
 </body>
