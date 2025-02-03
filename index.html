@@ -1,357 +1,343 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>修勾默契挑战</title>
-<script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore-compat.js"></script>
-<style>
-:root {
---primary-color: #2196F3;
---secondary-color: #607D8B;
---success-color: #4CAF50;
---error-color: #f44336;
-}
+    <title>个人知识挑战</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #607D8B;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+        }
 
-body {
-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-max-width: 800px;
-margin: 0 auto;
-padding: 20px;
-background: #f5f5f5;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
 
-.page {
-display: none;
-background: white;
-padding: 2rem;
-border-radius: 10px;
-box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-animation: fadeIn 0.3s ease;
-}
+        .page {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s ease;
+        }
 
-.active { display: block; }
+        .active {
+            display: block;
+        }
 
-input[type="text"] {
-padding: 0.8rem;
-border: 2px solid #ddd;
-border-radius: 4px;
-width: 250px;
-font-size: 1rem;
-}
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
 
-button {
-background: var(--primary-color);
-color: white;
-border: none;
-padding: 0.8rem 1.5rem;
-border-radius: 4px;
-cursor: pointer;
-transition: background 0.3s;
-}
+        input[type="text"] {
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 250px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
 
-table {
-width: 100%;
-border-collapse: collapse;
-margin: 1rem 0;
-}
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
 
-th, td {
-padding: 12px;
-border-bottom: 1px solid #ddd;
-}
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1rem;
+        }
 
-.correct { color: var(--success-color); }
-.wrong { color: var(--error-color); }
+        button:hover {
+            background: #1976D2;
+        }
 
-@keyframes fadeIn {
-from { opacity: 0; transform: translateY(10px); }
-to { opacity: 1; transform: translateY(0); }
-}
-</style>
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 1rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .correct { color: var(--success-color); }
+        .wrong { color: var(--error-color); }
+
+        #usernameError {
+            margin-top: 0.5rem;
+            color: var(--error-color);
+            font-weight: bold;
+        }
+
+        .ranking-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ranking-link:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
-<!-- 注册页面 -->
-<div id="registerPage" class="page active">
-<h2>📝 用户注册</h2>
-<div>
-<input type="text" id="username" placeholder="输入用户名">
-<button onclick="checkUsername()">开始挑战</button>
-<p id="usernameError" style="color:var(--error-color)"></p>
-</div>
-        <div>
-            <h3>🏆 实时排行榜</h3>
+    <!-- 注册页面 -->
+    <div id="registerPage" class="page active">
+        <h2>📝 用户注册</h2>
+        <div class="card">
+            <p>请输入用户名开始挑战：</p>
+            <input type="text" id="username" placeholder="输入用户名...">
+            <button onclick="checkUsername()">开始挑战</button>
+            <p id="usernameError"></p>
+        </div>
+        <div class="card">
+            <h3>🏆 当前排行榜</h3>
             <div id="previewRanking"></div>
         </div>
-</div>
+    </div>
 
-<!-- 答题页面 -->
-<div id="quizPage" class="page">
-<h2>🧠 默契挑战 (<span id="currentUser"></span>)</h2>
-<form id="quizForm"></form>
-<p>⏳ 已用时：<span id="timer">0</span>秒</p>
-</div>
+    <!-- 答题页面 -->
+    <div id="quizPage" class="page">
+        <h2>🧠 知识挑战 (<span id="currentUser"></span>)</h2>
+        <div class="card">
+            <form id="quizForm" onsubmit="return submitQuiz(event)"></form>
+            <p>⏳ 已用时：<span id="timer">0</span>秒</p>
+        </div>
+    </div>
 
-<!-- 结果页面 -->
-<div id="resultPage" class="page">
-<h2>🎯 挑战结果</h2>
-<div id="personalResult"></div>
-<h3>🏅 全球排行榜</h3>
-<div id="ranking"></div>
-<button onclick="showPage('registerPage')">返回首页</button>
-</div>
+    <!-- 结果页面 -->
+    <div id="resultPage" class="page">
+        <h2>🎯 挑战结果</h2>
+        <div class="card">
+            <div id="personalResult"></div>
+            <h3>🏅 排行榜</h3>
+            <div id="ranking"></div>
+            <button onclick="showPage('registerPage')">返回首页</button>
+        </div>
+    </div>
 
 <script>
-// 替换为你的Firebase配置！！！
-const firebaseConfig = {
-apiKey: "AIzaSyAVnHnfEyFGj65afGLH3ghrP3Jar4uzcLQ",
-authDomain: "myquiz-c29b5.firebaseapp.com",
-projectId: "myquiz-c29b5",
-storageBucket: "myquiz-c29b5.firebasestorage.app",
-messagingSenderId: "895675606677",
-appId: "1:895675606677:web:8cd8ae3897fc3415dd9d9c"
-};
-
-// 初始化Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// 题目设置
+// 题目配置
 const questions = [
-{
-question: "我的身高大约是？",
-options: ["160以下", "160-165", "166-170", "171-180"],
-answer: 2
-},
-{
-question: "我常玩的游戏不包括以下哪项？",
-options: ["和平精英", "王者荣耀", "金铲铲", "明日之后"],
-answer: 2
-},
-{
-question: "我的爱好不包括以下哪项？",
-options: ["吉他", "游泳", "台球", "打游戏"],
-answer: 1
-},
-{
-question: "我玩王者常打的位置？",
-options: ["射手", "打野", "辅助", "法师"],
-answer: 3
-},
-{
-question: "我常吃的汉堡品牌？",
-options: ["麦当劳", "肯德基", "塔斯汀", "华莱士"],
-answer: 0
-},
-{
-question: "我洗澡的时长？",
-options: ["0-10分钟", "10-20分钟", "20-30分钟", "30分钟以上"],
-answer: 1
-},
-{
-question: "我的血型？",
-options: ["A", "B", "AB", "O"],
-answer: 1
-},
-{
-question: "我相册中最多的照片类型？",
-options: ["生活日常", "游戏截图", "表情包", "自拍"],
-answer: 0
-},
-{
-question: "手机中使用时长最多的软件？",
-options: ["微信", "QQ", "抖音", "游戏"],
-answer: 2
-},
-{
-question: "最讨厌哪种食物？",
-options: ["香菜", "葱花", "大蒜", "花椒"],
-answer: 2
-},
+    {
+        question: "我最喜欢的颜色？",
+        options: ["红色", "蓝色", "绿色", "黑色"],
+        answer: 1
+    },
+    {
+        question: "我的出生年份？",
+        options: ["1990", "1995", "2000", "2005"],
+        answer: 2
+    }
 ];
 
-let startTime, timerInterval, currentUser;
+let startTime;
+let timerInterval;
+let currentUser = "";
+
+// 初始化预览排行榜
+function initPreviewRanking() {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const sortedUsers = [...users].sort((a,b) => b.accuracy - a.accuracy).slice(0, 5);
+    
+    document.getElementById("previewRanking").innerHTML = sortedUsers.length > 0 ? `
+        <table>
+            <tr><th>排名</th><th>用户名</th><th>正确率</th></tr>
+            ${sortedUsers.map((u,i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${u.username}</td>
+                    <td>${u.accuracy}%</td>
+                </tr>
+            `).join("")}
+        </table>
+    ` : "<p>暂无挑战记录，快来成为第一个挑战者吧！</p>";
+}
 
 // 初始化题目
 function initQuiz() {
-const form = document.getElementById("quizForm");
-form.innerHTML = questions.map((q, i) => `
-       <div>
-           <p>${i+1}. ${q.question}</p>
-           ${q.options.map((o, j) => `
-               <label>
-                   <input type="radio" name="q${i}" value="${j}" required>
-                   ${o}
-               </label>
-           `).join("")}
-       </div>
-   `).join("") + '<button type="submit">提交答案</button>';
-form.onsubmit = submitQuiz;
+    const form = document.getElementById("quizForm");
+    form.innerHTML = questions.map((q, i) => `
+        <div style="margin: 1.5rem 0;">
+            <p style="font-weight: 500;">${i+1}. ${q.question}</p>
+            <div style="display: grid; gap: 0.8rem;">
+                ${q.options.map((o, j) => `
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="radio" name="q${i}" value="${j}" required>
+                        ${o}
+                    </label>
+                `).join("")}
+            </div>
+        </div>
+    `).join("") + '<button type="submit">提交答案</button>';
 }
 
 // 用户名检查
-async function checkUsername() {
-const username = document.getElementById("username").value.trim();
-const errorEl = document.getElementById("usernameError");
+function checkUsername() {
+    const username = document.getElementById("username").value.trim();
+    const errorEl = document.getElementById("usernameError");
+    
+    if (!username) {
+        errorEl.textContent = "⚠️ 用户名不能为空";
+        return;
+    }
 
-if (!username) {
-errorEl.textContent = "⚠️ 用户名不能为空";
-return;
-}
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const existingUser = users.find(u => u.username === username);
 
-try {
-const doc = await db.collection("users").doc(username).get();
-if (doc.exists) {
-showResult(doc.data());
-showPage("resultPage");
-errorEl.textContent = "⚠️ 用户名已存在，显示历史记录";
-return;
-}
+    if (existingUser) {
+        showResult(existingUser);
+        showPage("resultPage");
+        errorEl.textContent = "⚠️ 该用户名已存在，已为您显示历史成绩";
+        return;
+    }
 
-currentUser = username;
-document.getElementById("currentUser").textContent = username;
-showPage("quizPage");
-startTimer();
-initQuiz();
-} catch (error) {
-alert("网络错误，请重试");
+    errorEl.textContent = "";
+    currentUser = username;
+    document.getElementById("currentUser").textContent = username;
+    showPage("quizPage");
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        document.getElementById("timer").textContent = 
+            Math.floor((Date.now() - startTime)/1000);
+    }, 1000);
+    initQuiz();
 }
-}
-
-// 开始计时
-function startTimer() {
-startTime = Date.now();
-timerInterval = setInterval(() => {
-document.getElementById("timer").textContent = 
-Math.floor((Date.now() - startTime)/1000);
-}, 1000);
-}
-
 // 提交答案
-async function submitQuiz(e) {
-e.preventDefault();
-clearInterval(timerInterval);
-const timeUsed = Math.floor((Date.now() - startTime)/1000);
+function submitQuiz(e) {
+    e.preventDefault();
+    clearInterval(timerInterval);
+    const timeUsed = Math.floor((Date.now() - startTime)/1000);
+    
+    // 计算得分
+    const formData = new FormData(e.target);
+    const answers = questions.map((q, i) => ({
+        question: q.question,
+        selected: parseInt(formData.get(`q${i}`)),
+        correct: q.answer
+    }));
 
-const formData = new FormData(e.target);
-const answers = questions.map((q, i) => ({
-question: q.question,
-selected: parseInt(formData.get(`q${i}`)),
-correct: q.answer
-}));
+    const correctCount = answers.filter(a => a.selected === a.correct).length;
+    const accuracy = (correctCount / questions.length * 100).toFixed(1);
 
-const correctCount = answers.filter(a => a.selected === a.correct).length;
-const accuracy = (correctCount / questions.length * 100).toFixed(1);
+    // 保存记录
+    const userData = {
+        username: currentUser,
+        time: timeUsed,
+        accuracy: accuracy,
+        answers: answers,
+        timestamp: new Date().toISOString()
+    };
 
-try {
-await db.collection("users").doc(currentUser).set({
-username: currentUser,
-time: timeUsed,
-accuracy: parseFloat(accuracy),
-answers: answers,
-timestamp: firebase.firestore.FieldValue.serverTimestamp()
-});
-showResult(currentUser);
-showPage("resultPage");
-} catch (error) {
-alert("提交失败，请检查网络");
-}
-}
-// 修改后的showResult函数
-async function showResult(userData) {
-try {
-// 个人结果
-document.getElementById("personalResult").innerHTML = `
-           <h4>${userData.username} 的成绩</h4>
-           <p class="author-message">🎉 想说的话：感谢参与！你的每一个选择都是对我的了解~</p>
-           <p>📊 正确率：${userData.accuracy}% | ⏱️ 用时：${userData.time}秒</p>
-           <table>
-               <tr><th>题目</th><th>你的答案</th><th>正确答案</th></tr>
-               ${userData.answers.map((a, i) => `
-                   <tr>
-                       <td>${i+1}. ${a.question}</td>
-                       <td class="${a.selected === a.correct ? 'correct' : 'wrong'}">
-                           ${questions[i].options[a.selected]}
-                       </td>
-                       <td>${questions[i].options[a.correct]}</td>
-                   </tr>
-               `).join("")}
-           </table>
-       `;
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    users.push(userData);
+    localStorage.setItem("users", JSON.stringify(users));
 
-// 全球排行榜
-const snapshot = await db.collection("users")
-.orderBy("accuracy", "desc")
-.limit(10)
-.get();
-
-document.getElementById("ranking").innerHTML = `
-           <table>
-               <tr><th>排名</th><th>用户</th><th>正确率</th><th>用时</th></tr>
-               ${snapshot.docs.map((doc, i) => `
-                   <tr>
-                       <td>${i+1}</td>
-                       <td><button class="user-detail-btn" onclick="showUserDetail('${doc.id}')">${doc.id}</button></td>
-                       <td>${doc.data().accuracy}%</td>
-                       <td>${doc.data().time}秒</td>
-                   </tr>
-               `).join("")}
-           </table>
-       `;
-} catch (error) {
-console.error(error);
-}
+    showResult(userData);
+    showPage("resultPage");
+    return false;
 }
 
-// 增强的showUserDetail函数
-async function showUserDetail(username) {
-try {
-const doc = await db.collection("users").doc(username).get();
-const user = doc.data();
+// 显示结果
+function showResult(userData) {
+    const personalResult = document.getElementById("personalResult");
+    personalResult.innerHTML = `
+        <h4>${userData.username} 的答题结果 (正确率：${userData.accuracy}%)</h4>
+        <p>我想说的话：感谢参与！希望你喜欢这个挑战</p>
+        <table>
+            <tr><th>题目</th><th>你的答案</th><th>正确答案</th></tr>
+            ${userData.answers.map((a, i) => `
+                <tr>
+                    <td>${i+1}. ${a.question}</td>
+                    <td class="${a.selected === a.correct ? 'correct' : 'wrong'}">
+                        ${questions[i].options[a.selected]}
+                    </td>
+                    <td>${questions[i].options[a.correct]}</td>
+                </tr>
+            `).join("")}
+        </table>
+    `;
 
-let detailHTML = `
-           <div class="user-detail">
-               <h4>${username} 的答题详情</h4>
-               <p>⏱️ 用时：${user.time}秒 | ✅ 正确率：${user.accuracy}%</p>
-               <table>
-                   <tr><th>题目</th><th>选择</th><th>正确</th></tr>
-       `;
-
-user.answers.forEach((answer, index) => {
-const question = questions.find(q => q.question === answer.question);
-detailHTML += `
-               <tr>
-                   <td>${index+1}. ${answer.question}</td>
-                   <td class="${answer.selected === answer.correct ? 'correct' : 'wrong'}">
-                       ${question.options[answer.selected]}
-                   </td>
-                   <td>${question.options[answer.correct]}</td>
-               </tr>
-           `;
-});
-
-detailHTML += `</table></div>`;
-
-// 创建弹窗显示
-const popup = document.createElement('div');
-popup.className = 'detail-popup';
-popup.innerHTML = `
-           <div class="popup-content">
-               ${detailHTML}
-               <button onclick="this.parentElement.parentElement.remove()">关闭</button>
-           </div>
-       `;
-document.body.appendChild(popup);
-} catch (error) {
-alert("获取详情失败：" + error.message);
+    // 生成排行榜
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const sortedUsers = [...users].sort((a,b) => b.accuracy - a.accuracy);
+    
+    document.getElementById("ranking").innerHTML = `
+        <table>
+            <tr><th>排名</th><th>用户名</th><th>正确率</th><th>用时</th></tr>
+            ${sortedUsers.map((u,i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td><a href="javascript:showUserDetail('${u.username}')">${u.username}</a></td>
+                    <td>${u.accuracy}%</td>
+                    <td>${u.time}秒</td>
+                </tr>
+            `).join("")}
+        </table>
+    `;
 }
+
+// 查看用户详情
+function showUserDetail(username) {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find(u => u.username === username);
+    alert(`用户 ${username} 的答题记录：
+时间：${user.time}秒
+正确率：${user.accuracy}%
+答题时间：${new Date(user.timestamp).toLocaleString()}`);
 }
-// 页面切换
+
 function showPage(pageId) {
-document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-document.getElementById(pageId).classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
 }
 
-window.onload = initQuiz;
+// 初始化页面时清空可能存在的用户输入
+    window.onload = function() {
+    initQuiz();
+    initPreviewRanking();
+};
+</script>
 </script>
 </body>
 </html>
