@@ -76,8 +76,7 @@
         <h2>📝 用户注册</h2>
         <div>
             <input type="text" id="username" placeholder="输入用户名">
-            <!-- 修改按钮绑定方式 -->
-            <button id="startButton">开始挑战</button>
+            <button onclick="checkUsername()">开始挑战</button>
             <p id="usernameError" style="color:var(--error-color)"></p>
         </div>
         <div>
@@ -193,9 +192,6 @@ async function checkUsername() {
 
 // 页面加载完成后绑定事件
 window.addEventListener('DOMContentLoaded', () => {
-    // 绑定按钮点击事件
-    document.getElementById('startButton').addEventListener('click', checkUsername);
-    
     // 其他初始化代码
     initQuiz();
     initPreviewRanking();
@@ -286,7 +282,7 @@ async function showResult(username) {
                     </tr>
                 `).join("")}
             </table>`;
-
+</script>
         // 全球排行榜
         const snapshot = await db.collection("users")
             .orderBy("accuracy", "desc")
