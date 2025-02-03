@@ -109,17 +109,17 @@ const firebaseConfig = {
 
 // 初始化Firebase
 async function firestoreProxy(action, data) {
-  const response = await fetch('你的函数访问地址', {
+  const response = await fetch('http://firestore-proxy-vxbupitotj.cn-hangzhou.fcapp.run', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-auth-token': 'YOUR_SECRET_KEY' // 与云函数中的密码一致
+      'x-auth-token': 'xgjlybfl' // 与云函数中的密码一致
     },
     body: JSON.stringify({
       method: action.method,
       path: action.path,
       project: 'myquiz-c29b5', // 你的Firebase项目ID
-      accessToken: '你的Firebase API密钥', // 从Firebase控制台获取
+      accessToken: 'AIzaSyAVnHnfEyFGj65afGLH3ghrP3Jar4uzcLQ', // 从Firebase控制台获取
       data: data
     })
   });
