@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>知识挑战 - 共享排行榜版</title>
+    <title>默契挑战</title>
+    <!-- 添加Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore-compat.js"></script>
     <style>
@@ -75,9 +76,15 @@
         <h2>📝 用户注册</h2>
         <div>
             <input type="text" id="username" placeholder="输入用户名">
-            <button onclick="checkUsername()">开始挑战</button>
+            <!-- 修改按钮绑定方式 -->
+            <button id="startButton">开始挑战</button>
             <p id="usernameError" style="color:var(--error-color)"></p>
         </div>
+        <div>
+            <h3>🏆 实时排行榜</h3>
+            <div id="previewRanking"></div>
+        </div>
+    </div>
         <div>
             <h3>🏆 实时排行榜</h3>
             <div id="previewRanking"></div>
@@ -114,8 +121,14 @@ const firebaseConfig = {
 };
 
 // 初始化Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db;
+try {
+    const app = firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    console.log("Firebase 初始化成功");
+} catch (error) {
+    console.error("Firebase 初始化失败:", error);
+}
 
 // 题目设置
 const questions = [
@@ -150,7 +163,7 @@ function initQuiz() {
     form.onsubmit = submitQuiz;
 }
 
-// 用户名检查
+// 修改后的checkUsername函数
 async function checkUsername() {
     const username = document.getElementById("username").value.trim();
     const errorEl = document.getElementById("usernameError");
@@ -166,18 +179,27 @@ async function checkUsername() {
             showResult(doc.data());
             showPage("resultPage");
             errorEl.textContent = "⚠️ 用户名已存在，显示历史记录";
-            return;
+        } else {
+            currentUser = username;
+            document.getElementById("currentUser").textContent = username;
+            showPage("quizPage");
+            startTimer();
+            initQuiz();
         }
-
-        currentUser = username;
-        document.getElementById("currentUser").textContent = username;
-        showPage("quizPage");
-        startTimer();
-        initQuiz();
     } catch (error) {
         alert("网络错误，请重试");
     }
 }
+
+// 页面加载完成后绑定事件
+window.addEventListener('DOMContentLoaded', () => {
+    // 绑定按钮点击事件
+    document.getElementById('startButton').addEventListener('click', checkUsername);
+    
+    // 其他初始化代码
+    initQuiz();
+    initPreviewRanking();
+});
 
 // 开始计时
 function startTimer() {
